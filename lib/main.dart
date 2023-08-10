@@ -1,7 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:mqtt_demo/mqtt_connection_manager.dart';
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -33,9 +45,32 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  static const _connectionTopic = "sensor/temperature";
+  static const _connectionUrl = "localhost";
+
+  final connectionManager = MqttConnectionManager(_connectionUrl);
+
+  @override
+  void initState() {
+    super.initState();
+    initConnectionManagerAndListenForUpdates();
+  }
+
+  Future initConnectionManagerAndListenForUpdates() async {
+    await connectionManager.init();
+    connectionManager.subscribe(
+      topic: _connectionTopic,
+      onMessage: (message) {
+        _counter = int.parse(message);
+        setState(() {});
+      },
+    );
+  }
+
   void _incrementCounter() {
     setState(() {
       _counter++;
+      connectionManager.publish(topic: _connectionTopic, message: _counter.toString());
     });
   }
 
