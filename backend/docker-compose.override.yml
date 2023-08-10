@@ -1,0 +1,8 @@
+services:
+  mosquitto:
+    build:
+      args:
+        GID: 1977418181
+        UID: 2070017605
+        USER: unicorn
+    user: 2070017605:1977418181
